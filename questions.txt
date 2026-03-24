@@ -1,0 +1,38 @@
+Compare current vs projected 90-day revenue for high risk sellers?
+
+Which personas have the most revenue at risk from churn?
+
+Show customers predicted to drop loyalty tier with their current CLV and churn probability
+
+Which seller categories serve the most high-churn-risk customers?
+
+Show me top 10 customers by CLV along with their RFM segment and which sellers they buy from
+
+What is the average order value by customer persona and seller tier?
+
+Show critical priority customers matched with their sellers and the seller risk level
+
+- Identify high-valued customers for cross sale strategy
+- Detect and Minimize RTO(Return to Origin) / cancellation risk
+- Predict customer purchase behavior
+- Personalize marketing campaigns
+- Detect Inventory Inaccuracy
+- Minimize Profit Trap due to High CAC(Customer Acquisition Cost)
+- Channel Sync Disconnect -- check
+- Detect Synthetic Identity Fraud
+- Reduce ChatBot Gap for Customer Support
+
+
+
+#	Alert	Trigger
+1	Seller Fraud	fraud_flag_rate > 5%
+2	Customer Churn	churn_prediction = HIGH/VERY HIGH
+3	Critical Retention	retention_priority = CRITICAL
+4	Seller Risk Escalation	risk_forecast = CRITICAL/HIGH
+5	Tier Downgrades	predicted tier < current tier
+6	Ops Health Crisis	operational_health = AT RISK
+7	High RTO / Logistics	rto_rate > 10%
+8	Campaign Re-targeting	shifting personas + high upsell potential
+9	Inventory Stock-Out	stock_out_rate > 15%
+10	COD Payment Risk	cod_users_pct > 60%
+11	Low Sustainability	sustainability < 0.4 on high-rev sellers

@@ -3,44 +3,58 @@ from snowflake.snowpark.context import get_active_session
 
 session = get_active_session()
 
-st.title("E-Commerce Data Explorer")
+if "page" not in st.session_state:
+    st.session_state.page = "home"
 
-TABLES = [
-    "CUSTOMERS",
-    "ORDERS", 
-    "SELLERS",
-    "SELLER_ORDER_CUSTOMER_METRICS",
-    "CUSTOMER_SELLER_MAPPING",
-    "CUSTOMER_AI_360",
-    "GOLD_CUSTOMER_360",
-    "GOLD_SELLER_360",
-    "RFM_SEGMENTS",
-    "FORECAST_CUSTOMER_OUTLOOK",
-    "FORECAST_SELLER_OUTLOOK",
+def go_to(page):
+    st.session_state.page = page
+
+PAGES = [
+    {"key": "customers", "label": "Customers", "desc": "Loyalty tiers & top CLV"},
+    {"key": "analytics", "label": "Analytics", "desc": "Orders by tier & category"},
+    {"key": "customer_forecast", "label": "Customer Forecast", "desc": "Churn & retention"},
+    {"key": "seller_forecast", "label": "Seller Forecast", "desc": "Risk & sustainability scores"},
+    {"key": "ai_chat", "label": "AI Chat", "desc": "Ask data questions"},
+    {"key": "email_alerts", "label": "Email Alerts", "desc": "Real-time alert center"},
+    {"key": "inventory", "label": "Inventory Alerts", "desc": "Stockout warnings"},
+    {"key": "cross_platform", "label": "Cross-Platform", "desc": "Identity & segments"},
+    {"key": "self_serve", "label": "Self-Serve", "desc": "Customer portal"},
 ]
 
-tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
-    ":material/table_chart: Tables",
-    ":material/person: Customers",
-    ":material/storefront: Sellers",
-    ":material/analytics: Analytics",
-    ":material/trending_up: Customer Forecast",
-    ":material/inventory: Seller Forecast",
-    ":material/chat: AI Chat",
-    ":material/mail: Email Alerts",
-])
+if st.session_state.page == "home":
+    st.title("E-Commerce Data Explorer")
+    st.caption("Select a section to explore")
 
-with tab1:
-    st.subheader("Browse Tables")
-    selected_table = st.selectbox("Select table", TABLES)
-    
-    if selected_table:
-        row_limit = st.slider("Rows to display", 10, 500, 100)
-        df = session.table(f"SNOWFLAKE_LEARNING_DB.PUBLIC.{selected_table}").limit(row_limit).to_pandas()
-        st.dataframe(df, use_container_width=True, hide_index=True)
-        st.caption(f"Showing {len(df)} rows")
+    row1 = st.columns(3)
+    for i in range(3):
+        with row1[i]:
+            p = PAGES[i]
+            with st.container(border=True):
+                st.write(f"**{p['label']}**")
+                st.caption(p["desc"])
+                st.button("Open", key=f"btn_{p['key']}", on_click=go_to, args=(p["key"],), use_container_width=True)
 
-with tab2:
+    row2 = st.columns(3)
+    for i in range(3, 6):
+        with row2[i - 3]:
+            p = PAGES[i]
+            with st.container(border=True):
+                st.write(f"**{p['label']}**")
+                st.caption(p["desc"])
+                st.button("Open", key=f"btn_{p['key']}", on_click=go_to, args=(p["key"],), use_container_width=True)
+
+    row3 = st.columns(3)
+    for i in range(6, 9):
+        with row3[i - 6]:
+            p = PAGES[i]
+            with st.container(border=True):
+                st.write(f"**{p['label']}**")
+                st.caption(p["desc"])
+                st.button("Open", key=f"btn_{p['key']}", on_click=go_to, args=(p["key"],), use_container_width=True)
+
+elif st.session_state.page == "customers":
+    st.button(":material/arrow_back: Home", on_click=go_to, args=("home",))
+    st.title("E-Commerce Data Explorer")
     st.subheader("Customer Insights")
     
     col1, col2, col3 = st.columns(3)
@@ -76,43 +90,9 @@ with tab2:
     """).to_pandas()
     st.dataframe(top_customers, hide_index=True)
 
-with tab3:
-    st.subheader("Seller Insights")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    seller_stats = session.sql("""
-        SELECT 
-            COUNT(*) as total_sellers,
-            ROUND(AVG(total_revenue), 0) as avg_revenue,
-            ROUND(AVG(avg_customer_rating), 2) as avg_rating
-        FROM SNOWFLAKE_LEARNING_DB.PUBLIC.SELLERS
-    """).to_pandas()
-    
-    col1.metric("Total Sellers", int(seller_stats['TOTAL_SELLERS'][0]))
-    col2.metric("Avg Revenue", f"${float(seller_stats['AVG_REVENUE'][0]):,.0f}")
-    col3.metric("Avg Rating", f"{float(seller_stats['AVG_RATING'][0]):.1f}")
-    
-    st.subheader("Sellers by Tier")
-    tier_seller = session.sql("""
-        SELECT seller_tier, COUNT(*) as count, 
-               ROUND(AVG(total_revenue), 0) as avg_revenue
-        FROM SNOWFLAKE_LEARNING_DB.PUBLIC.SELLERS
-        GROUP BY seller_tier ORDER BY avg_revenue DESC
-    """).to_pandas()
-    st.bar_chart(tier_seller, x="SELLER_TIER", y="AVG_REVENUE")
-    
-    st.subheader("Top Sellers by Revenue")
-    top_sellers = session.sql("""
-        SELECT seller_id, seller_name, seller_tier, seller_category,
-               total_orders, ROUND(total_revenue, 0) as revenue,
-               avg_customer_rating as rating
-        FROM SNOWFLAKE_LEARNING_DB.PUBLIC.SELLERS
-        ORDER BY total_revenue DESC LIMIT 10
-    """).to_pandas()
-    st.dataframe(top_sellers, hide_index=True)
-
-with tab4:
+elif st.session_state.page == "analytics":
+    st.button(":material/arrow_back: Home", on_click=go_to, args=("home",))
+    st.title("E-Commerce Data Explorer")
     st.subheader("Combined Analytics")
 
     st.write("**Orders by Seller Tier & Category**")
@@ -125,7 +105,9 @@ with tab4:
     """).to_pandas()
     st.dataframe(combo, hide_index=True)
 
-with tab5:
+elif st.session_state.page == "customer_forecast":
+    st.button(":material/arrow_back: Home", on_click=go_to, args=("home",))
+    st.title("E-Commerce Data Explorer")
     st.subheader("Customer Forecast")
 
     cf_kpi = session.sql("""
@@ -248,7 +230,9 @@ with tab5:
             "RECOMMENDED_INTERVENTION": "Intervention",
         })
 
-with tab6:
+elif st.session_state.page == "seller_forecast":
+    st.button(":material/arrow_back: Home", on_click=go_to, args=("home",))
+    st.title("E-Commerce Data Explorer")
     st.subheader("Seller Forecast")
 
     sf_kpi = session.sql("""
@@ -374,7 +358,9 @@ with tab6:
             "RECOMMENDED_ACTION": "Action",
         })
 
-with tab7:
+elif st.session_state.page == "ai_chat":
+    st.button(":material/arrow_back: Home", on_click=go_to, args=("home",))
+    st.title("E-Commerce Data Explorer")
     st.subheader("AI Data Assistant")
     st.caption("Ask questions and get real data, insights, and SQL queries")
 
@@ -402,7 +388,7 @@ Database: SNOWFLAKE_LEARNING_DB.PUBLIC
 
 Tables and columns:
 - CUSTOMERS: customer_id, first_name, last_name, city, state, loyalty_tier, total_orders, customer_lifetime_value, age, gender
-- ORDERS: order_id, customer_id, product_id, order_value, category, order_date, payment_type, delivery_status (NOTE: NO seller_id here - use CUSTOMER_SELLER_MAPPING to link orders to sellers)
+- ORDERS: order_id, customer_id, product_id, order_value, category, order_date, payment_type, order_status (NOTE: NO seller_id here - use CUSTOMER_SELLER_MAPPING to link orders to sellers)
 - SELLERS: seller_id, seller_name, seller_tier, seller_category, seller_type, total_revenue, total_orders, avg_order_value, seller_score, avg_customer_rating, return_rate_pct, cancellation_rate_pct, fraud_flag_rate
 - CUSTOMER_AI_360: customer_id, first_name, last_name, persona, loyalty_tier, churn_risk_score, fraud_risk_score, total_orders, total_order_value, profile_clv, profile_engagement_score, discount_sensitivity_score, return_behavior_score
 - RFM_SEGMENTS: customer_id, r_score, f_score, m_score, rfm_score, extracted_value (segment name like Champion, At Risk, etc.)
@@ -526,7 +512,9 @@ Be specific - reference actual numbers and values from the data. Format in markd
             st.session_state.chat_history = []
             st.rerun()
 
-with tab8:
+elif st.session_state.page == "email_alerts":
+    st.button(":material/arrow_back: Home", on_click=go_to, args=("home",))
+    st.title("E-Commerce Data Explorer")
     st.subheader("Email Alert Center")
     st.caption("Live alerts powered by real-time Dynamic Tables — auto-refreshes with new data")
 
@@ -543,7 +531,7 @@ with tab8:
 
     st.divider()
 
-    st.write("**11 alerts monitored** — sourced from real-time Dynamic Tables where available")
+    st.write("**20 alerts monitored** — sourced from real-time Dynamic Tables where available")
 
     alert_preview = session.sql("""
         SELECT 'Seller Fraud (>5%)' AS alert, COUNT(*) AS count
@@ -585,6 +573,41 @@ with tab8:
         SELECT 'Low Sustainability (<0.4)', COUNT(*)
         FROM SNOWFLAKE_LEARNING_DB.PUBLIC.FORECAST_SELLER_OUTLOOK
         WHERE sustainability_score < 0.4 AND current_revenue > 100000
+        UNION ALL
+        SELECT 'Inventory Stockout (Products)', COUNT(*)
+        FROM SNOWFLAKE_LEARNING_DB.PUBLIC.DT_INVENTORY_RISK
+        WHERE RISK_LEVEL = 'STOCKOUT'
+        UNION ALL
+        SELECT 'Inventory Critical (Products)', COUNT(*)
+        FROM SNOWFLAKE_LEARNING_DB.PUBLIC.DT_INVENTORY_RISK
+        WHERE RISK_LEVEL = 'CRITICAL'
+        UNION ALL
+        SELECT 'Unfulfillable Orders (Stock Risk)', SUM(ESTIMATED_UNFULFILLABLE_ORDERS)
+        FROM SNOWFLAKE_LEARNING_DB.PUBLIC.DT_INVENTORY_RISK
+        WHERE RISK_LEVEL IN ('STOCKOUT', 'CRITICAL')
+        UNION ALL
+        SELECT 'Revenue At Risk ($)', ROUND(SUM(POTENTIAL_REVENUE_LOSS), 0)
+        FROM SNOWFLAKE_LEARNING_DB.PUBLIC.DT_INVENTORY_RISK
+        WHERE RISK_LEVEL IN ('STOCKOUT', 'CRITICAL')
+        UNION ALL
+        SELECT 'Avg Days to Stockout', ROUND(AVG(CASE WHEN PENDING_ORDERS > 0 THEN CURRENT_STOCK_LEVEL * 1.0 / PENDING_ORDERS ELSE NULL END), 1)
+        FROM SNOWFLAKE_LEARNING_DB.PUBLIC.DT_INVENTORY_RISK
+        WHERE RISK_LEVEL IN ('WARNING', 'CRITICAL')
+        UNION ALL
+        SELECT 'Warning to Critical Soon (Stock < 5)', COUNT(*)
+        FROM SNOWFLAKE_LEARNING_DB.PUBLIC.DT_INVENTORY_RISK
+        WHERE RISK_LEVEL = 'WARNING' AND STOCK_AFTER_PENDING < 5
+        UNION ALL
+        SELECT 'Categories Affected by Stockout', COUNT(DISTINCT CATEGORY)
+        FROM SNOWFLAKE_LEARNING_DB.PUBLIC.DT_INVENTORY_RISK
+        WHERE RISK_LEVEL IN ('STOCKOUT', 'CRITICAL')
+        UNION ALL
+        SELECT 'Sellers with 3+ Stockout Products', COUNT(*)
+        FROM (SELECT SELLER_ID FROM SNOWFLAKE_LEARNING_DB.PUBLIC.DT_INVENTORY_RISK WHERE RISK_LEVEL = 'STOCKOUT' GROUP BY SELLER_ID HAVING COUNT(*) >= 3)
+        UNION ALL
+        SELECT 'Open Inventory Alerts', COUNT(*)
+        FROM SNOWFLAKE_LEARNING_DB.PUBLIC.INVENTORY_STOCKOUT_ALERTS
+        WHERE ALERT_STATUS = 'OPEN'
     """).to_pandas()
     st.dataframe(alert_preview, hide_index=True, use_container_width=True, column_config={
         "ALERT": "Alert Type",
@@ -635,3 +658,265 @@ with tab8:
         st.write("**Scheduled Alerts**")
         st.info("Daily email alert task is configured for **9:00 AM IST**. Run this SQL to activate:")
         st.code("ALTER TASK SNOWFLAKE_LEARNING_DB.PUBLIC.TASK_DAILY_EMAIL_ALERTS RESUME;", language="sql")
+
+elif st.session_state.page == "inventory":
+    st.button(":material/arrow_back: Home", on_click=go_to, args=("home",))
+    st.title("E-Commerce Data Explorer")
+    st.subheader("📦 Inventory Stockout Early Warning")
+
+    risk_df = session.sql("""
+        SELECT RISK_LEVEL, COUNT(*) AS PRODUCTS,
+               SUM(ESTIMATED_UNFULFILLABLE_ORDERS) AS UNFULFILLABLE_ORDERS,
+               ROUND(SUM(POTENTIAL_REVENUE_LOSS), 0) AS REVENUE_AT_RISK
+        FROM SNOWFLAKE_LEARNING_DB.PUBLIC.DT_INVENTORY_RISK
+        GROUP BY RISK_LEVEL ORDER BY 1
+    """).to_pandas()
+
+    c1, c2, c3, c4 = st.columns(4)
+    risk_map = {r['RISK_LEVEL']: r for _, r in risk_df.iterrows()}
+    c1.metric("Stockout", int(risk_map.get('STOCKOUT', {}).get('PRODUCTS', 0)))
+    c2.metric("Critical", int(risk_map.get('CRITICAL', {}).get('PRODUCTS', 0)))
+    c3.metric("Warning", int(risk_map.get('WARNING', {}).get('PRODUCTS', 0)))
+    c4.metric("Healthy", int(risk_map.get('HEALTHY', {}).get('PRODUCTS', 0)))
+
+    st.subheader("Open Alerts")
+    alerts_df = session.sql("""
+        SELECT ALERT_TIMESTAMP, SELLER_NAME, PRODUCT_ID, PRODUCT_NAME, CATEGORY,
+               CURRENT_STOCK, PENDING_ORDERS, RISK_LEVEL,
+               ESTIMATED_STOCKOUT_ORDERS, ROUND(POTENTIAL_REVENUE_LOSS, 0) AS REVENUE_LOSS,
+               ALERT_STATUS
+        FROM SNOWFLAKE_LEARNING_DB.PUBLIC.INVENTORY_STOCKOUT_ALERTS
+        WHERE ALERT_STATUS = 'OPEN'
+        ORDER BY ALERT_TIMESTAMP DESC LIMIT 50
+    """).to_pandas()
+    st.dataframe(alerts_df, use_container_width=True, hide_index=True)
+
+    st.subheader("At-Risk Products by Category")
+    cat_risk = session.sql("""
+        SELECT CATEGORY, RISK_LEVEL, COUNT(*) AS PRODUCTS
+        FROM SNOWFLAKE_LEARNING_DB.PUBLIC.DT_INVENTORY_RISK
+        WHERE RISK_LEVEL IN ('STOCKOUT', 'CRITICAL', 'WARNING')
+        GROUP BY CATEGORY, RISK_LEVEL ORDER BY PRODUCTS DESC
+    """).to_pandas()
+    if len(cat_risk) > 0:
+        st.bar_chart(cat_risk, x="CATEGORY", y="PRODUCTS", color="RISK_LEVEL")
+
+    st.subheader("Top Sellers with Stockout Issues")
+    seller_risk = session.sql("""
+        SELECT SELLER_NAME,
+               SUM(CASE WHEN RISK_LEVEL = 'STOCKOUT' THEN 1 ELSE 0 END) AS STOCKOUT_PRODUCTS,
+               SUM(CASE WHEN RISK_LEVEL = 'WARNING' THEN 1 ELSE 0 END) AS WARNING_PRODUCTS,
+               SUM(ESTIMATED_UNFULFILLABLE_ORDERS) AS TOTAL_UNFULFILLABLE,
+               ROUND(SUM(POTENTIAL_REVENUE_LOSS), 0) AS TOTAL_REVENUE_LOSS
+        FROM SNOWFLAKE_LEARNING_DB.PUBLIC.DT_INVENTORY_RISK
+        WHERE RISK_LEVEL != 'HEALTHY'
+        GROUP BY SELLER_NAME ORDER BY STOCKOUT_PRODUCTS DESC LIMIT 15
+    """).to_pandas()
+    st.dataframe(seller_risk, hide_index=True)
+
+elif st.session_state.page == "cross_platform":
+    st.button(":material/arrow_back: Home", on_click=go_to, args=("home",))
+    st.title("E-Commerce Data Explorer")
+    st.subheader("🌐 Cross-Platform Customer Identity")
+
+    seg_df = session.sql("""
+        SELECT CROSS_PLATFORM_SEGMENT, COUNT(*) AS CUSTOMERS,
+               ROUND(AVG(TOTAL_SPEND_ALL_PLATFORMS), 0) AS AVG_SPEND,
+               ROUND(AVG(PLATFORM_COUNT), 1) AS AVG_PLATFORMS
+        FROM SNOWFLAKE_LEARNING_DB.PUBLIC.CUSTOMER_CROSS_PLATFORM_IDENTITY
+        GROUP BY CROSS_PLATFORM_SEGMENT ORDER BY CUSTOMERS DESC
+    """).to_pandas()
+
+    c1, c2, c3, c4 = st.columns(4)
+    seg_map = {r['CROSS_PLATFORM_SEGMENT']: r for _, r in seg_df.iterrows()}
+    for col, seg, label in [
+        (c1, 'OMNICHANNEL_POWER_USER', 'Omnichannel'),
+        (c2, 'MULTI_PLATFORM', 'Multi-Platform'),
+        (c3, 'DUAL_PLATFORM', 'Dual-Platform'),
+        (c4, 'SINGLE_PLATFORM', 'Single-Platform')
+    ]:
+        row = seg_map.get(seg)
+        if row is not None:
+            col.metric(label, int(row['CUSTOMERS']), f"${int(row['AVG_SPEND']):,} avg")
+        else:
+            col.metric(label, 0)
+
+    st.subheader("Marketing Action Segments")
+    action_df = session.sql("""
+        SELECT MARKETING_ACTION_SEGMENT, COUNT(*) AS CUSTOMERS,
+               ROUND(AVG(TOTAL_REVENUE), 0) AS AVG_REVENUE,
+               ROUND(AVG(SWITCH_RATE_PCT), 1) AS AVG_SWITCH_RATE
+        FROM SNOWFLAKE_LEARNING_DB.PUBLIC.CROSS_PLATFORM_MARKETING_INSIGHTS
+        GROUP BY MARKETING_ACTION_SEGMENT ORDER BY CUSTOMERS DESC
+    """).to_pandas()
+    st.bar_chart(action_df, x="MARKETING_ACTION_SEGMENT", y="CUSTOMERS")
+    st.dataframe(action_df, hide_index=True)
+
+    st.subheader("High-Value Cross-Platform Customers")
+    vip_df = session.sql("""
+        SELECT CUSTOMER_NAME, LOYALTY_TIER, CROSS_PLATFORM_SEGMENT,
+               PLATFORM_COUNT, TOTAL_ORDERS_ALL_PLATFORMS AS TOTAL_ORDERS,
+               ROUND(TOTAL_SPEND_ALL_PLATFORMS, 0) AS TOTAL_SPEND,
+               HIGHEST_SPEND_PLATFORM, MOST_FREQUENT_PLATFORM, RFM_SEGMENT
+        FROM SNOWFLAKE_LEARNING_DB.PUBLIC.CUSTOMER_CROSS_PLATFORM_IDENTITY
+        WHERE CROSS_PLATFORM_VALUE = 'HIGH'
+        ORDER BY TOTAL_SPEND_ALL_PLATFORMS DESC LIMIT 20
+    """).to_pandas()
+    st.dataframe(vip_df, use_container_width=True, hide_index=True)
+
+    st.subheader("Campaign Recommendations")
+    campaigns_df = session.sql("""
+        SELECT MARKETING_ACTION_SEGMENT, RECOMMENDED_CAMPAIGN_ACTION,
+               COUNT(*) AS TARGET_CUSTOMERS,
+               ROUND(AVG(TOTAL_REVENUE), 0) AS AVG_REVENUE
+        FROM SNOWFLAKE_LEARNING_DB.PUBLIC.CROSS_PLATFORM_MARKETING_INSIGHTS
+        GROUP BY MARKETING_ACTION_SEGMENT, RECOMMENDED_CAMPAIGN_ACTION
+        ORDER BY TARGET_CUSTOMERS DESC
+    """).to_pandas()
+    st.dataframe(campaigns_df, use_container_width=True, hide_index=True)
+
+elif st.session_state.page == "self_serve":
+    st.button(":material/arrow_back: Home", on_click=go_to, args=("home",))
+    st.title("E-Commerce Data Explorer")
+    st.subheader("Customer Self-Serve Portal")
+    st.caption("Customers can check their orders, loyalty status, recommendations & more")
+
+    if "cust_chat" not in st.session_state:
+        st.session_state.cust_chat = []
+
+    cust_id_input = st.number_input("Enter your Customer ID", min_value=1, max_value=3000, value=1, step=1, key="cust_id")
+
+    cust_info = session.sql(f"""
+        SELECT CUSTOMER_ID, FIRST_NAME || ' ' || LAST_NAME AS NAME, CITY, STATE,
+               LOYALTY_TIER, LOYALTY_POINTS, ROUND(CUSTOMER_LIFETIME_VALUE, 0) AS CLV,
+               TOTAL_ORDERS, PREFERRED_CATEGORY, PREFERRED_PAYMENT_METHOD
+        FROM SNOWFLAKE_LEARNING_DB.PUBLIC.CUSTOMERS
+        WHERE CUSTOMER_ID = {int(cust_id_input)}
+    """).to_pandas()
+
+    if len(cust_info) > 0:
+        row = cust_info.iloc[0]
+        st.write(f"**Welcome, {row['NAME']}!**")
+
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Loyalty Tier", row['LOYALTY_TIER'])
+        c2.metric("Points", f"{int(row['LOYALTY_POINTS']):,}")
+        c3.metric("Lifetime Value", f"${int(row['CLV']):,}")
+        c4.metric("Total Orders", int(row['TOTAL_ORDERS']))
+
+        st.divider()
+
+        quick_c1, quick_c2, quick_c3 = st.columns(3)
+
+        with quick_c1:
+            if st.button("My Recent Orders", key="btn_orders"):
+                st.session_state.cust_chat.append({"role": "user", "content": "Show my recent orders"})
+                orders_df = session.sql(f"""
+                    SELECT ORDER_ID, ORDER_DATE, PRODUCT_NAME, CATEGORY, BRAND,
+                           ROUND(ORDER_VALUE, 0) AS ORDER_VALUE, ORDER_STATUS,
+                           DELIVERY_TIME_DAYS, IS_RETURNED
+                    FROM SNOWFLAKE_LEARNING_DB.PUBLIC.ORDERS
+                    WHERE CUSTOMER_ID = {int(cust_id_input)}
+                    ORDER BY ORDER_DATE DESC LIMIT 10
+                """).to_pandas()
+                st.session_state.cust_chat.append({"role": "assistant", "content": "Here are your recent orders:", "data": orders_df})
+
+        with quick_c2:
+            if st.button("My Loyalty Status", key="btn_loyalty"):
+                st.session_state.cust_chat.append({"role": "user", "content": "Show my loyalty status"})
+                rfm_df = session.sql(f"""
+                    SELECT r.RFM_SEGMENT, r.R_SCORE, r.F_SCORE, r.M_SCORE, r.RFM_SCORE,
+                           c.LOYALTY_TIER, c.LOYALTY_POINTS,
+                           ROUND(c.CUSTOMER_LIFETIME_VALUE, 0) AS CLV
+                    FROM SNOWFLAKE_LEARNING_DB.PUBLIC.RFM_SEGMENTS r
+                    JOIN SNOWFLAKE_LEARNING_DB.PUBLIC.CUSTOMERS c ON r.CUSTOMER_ID = c.CUSTOMER_ID
+                    WHERE r.CUSTOMER_ID = {int(cust_id_input)}
+                """).to_pandas()
+                st.session_state.cust_chat.append({"role": "assistant", "content": "Here's your loyalty breakdown:", "data": rfm_df})
+
+        with quick_c3:
+            if st.button("My Platform Activity", key="btn_platform"):
+                st.session_state.cust_chat.append({"role": "user", "content": "Show my cross-platform activity"})
+                plat_df = session.sql(f"""
+                    SELECT PLATFORM, CHANNEL, ORDERS_ON_PLATFORM,
+                           ROUND(TOTAL_SPEND_ON_PLATFORM, 0) AS SPEND,
+                           ROUND(AVG_ORDER_VALUE_ON_PLATFORM, 0) AS AOV,
+                           FIRST_ORDER_ON_PLATFORM, LAST_ORDER_ON_PLATFORM
+                    FROM SNOWFLAKE_LEARNING_DB.PUBLIC.CUSTOMER_PLATFORM_PROFILES
+                    WHERE CUSTOMER_ID = {int(cust_id_input)}
+                    ORDER BY TOTAL_SPEND_ON_PLATFORM DESC
+                """).to_pandas()
+                st.session_state.cust_chat.append({"role": "assistant", "content": "Your activity across platforms:", "data": plat_df})
+
+        st.divider()
+
+        for msg in st.session_state.cust_chat:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
+                if "data" in msg and msg["data"] is not None:
+                    st.dataframe(msg["data"], hide_index=True, use_container_width=True)
+
+        cust_prompt = st.chat_input("Ask about your orders, returns, recommendations...", key="cust_chat_input")
+
+        if cust_prompt:
+            st.session_state.cust_chat.append({"role": "user", "content": cust_prompt})
+
+            with st.spinner("Looking up your info..."):
+                safe_prompt = cust_prompt.replace("'", "''")
+                cust_sql_prompt = f"""You are a helpful customer service SQL expert. Customer ID is {int(cust_id_input)}.
+
+Available tables in SNOWFLAKE_LEARNING_DB.PUBLIC:
+- CUSTOMERS: customer_id, first_name, last_name, city, loyalty_tier, loyalty_points, customer_lifetime_value, total_orders, preferred_category, churn_risk_score, engagement_score
+- ORDERS: order_id, customer_id, order_date, product_name, brand, category, order_value, discount_amount, payment_type, order_status, delivery_time_days, is_returned, return_reason, is_cancelled, customer_rating, profit
+- RFM_SEGMENTS: customer_id, r_score, f_score, m_score, rfm_score, rfm_segment
+- CUSTOMER_PLATFORM_PROFILES: customer_id, platform, channel, orders_on_platform, total_spend_on_platform, avg_order_value_on_platform, categories_bought
+- CUSTOMER_CROSS_PLATFORM_IDENTITY: customer_id, platform_count, all_platforms, cross_platform_segment, highest_spend_platform
+- CUSTOMER_SELLER_MAPPING: customer_id, order_id, seller_id
+- SELLERS: seller_id, seller_name, seller_category, avg_customer_rating
+
+Generate ONLY a SQL query for customer {int(cust_id_input)}.
+Always filter with WHERE customer_id = {int(cust_id_input)}.
+Use fully qualified names: SNOWFLAKE_LEARNING_DB.PUBLIC.<table>.
+LIMIT 20. Return ONLY SQL, no explanation."""
+
+                sql_result = session.sql(
+                    "SELECT SNOWFLAKE.CORTEX.COMPLETE('mistral-large2', ?) AS response",
+                    params=[cust_sql_prompt + "\n\nQuestion: " + safe_prompt]
+                ).collect()[0]['RESPONSE']
+
+                sql_query = sql_result.strip().replace("```sql", "").replace("```", "").strip()
+
+                try:
+                    result_df = session.sql(sql_query).to_pandas()
+
+                    summary_prompt = f"""You are a friendly customer service agent. Customer asked: "{safe_prompt}"
+Data returned:
+{result_df.head(10).to_string()}
+
+Give a helpful, friendly response in 2-3 sentences. Use the customer's name if available. Be specific with numbers."""
+
+                    summary = session.sql(
+                        "SELECT SNOWFLAKE.CORTEX.COMPLETE('mistral-large2', ?) AS response",
+                        params=[summary_prompt]
+                    ).collect()[0]['RESPONSE']
+
+                    st.session_state.cust_chat.append({
+                        "role": "assistant",
+                        "content": summary,
+                        "data": result_df
+                    })
+                except Exception as e:
+                    st.session_state.cust_chat.append({
+                        "role": "assistant",
+                        "content": f"Sorry, I couldn't find that info. Try asking about your orders, returns, loyalty points, or recommendations.",
+                        "data": None
+                    })
+
+            st.rerun()
+
+        if st.session_state.cust_chat:
+            if st.button("Clear conversation", key="clear_cust_chat"):
+                st.session_state.cust_chat = []
+                st.rerun()
+    else:
+        st.warning("Customer ID not found. Please enter a valid ID (1-3000).")

@@ -1,0 +1,25 @@
+name: Enforce One-Way PR Gate
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  gate-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR source branch
+        if: |
+          (github.event.pull_request.base.ref == 'qa' && github.event.pull_request.head.ref != 'dev') ||
+          (github.event.pull_request.base.ref == 'prod' && github.event.pull_request.head.ref != 'qa')
+        run: |
+          echo "::error::This PR violates the one-way gate policy."
+          echo "Allowed paths:"
+          echo "  dev -> qa"
+          echo "  qa -> prod"
+          echo ""
+          echo "Please raise your PR from the correct source branch."
+          exit 1
+
+      - name: Gate passed
+        if: success()
+        run: echo "PR source branch is valid."
